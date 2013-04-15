@@ -11,7 +11,7 @@ setup(name = "datachef",
       author_email='uche@ogbuji.net',
       url='http://uche.ogbuji.net',
       package_dir={'datachef': 'lib'},
-      packages=['datachef', 'datachef.exhibit', 'datachef.geo', 'datachef.thirdparty'],
+      packages=['datachef', 'datachef.exhibit', 'datachef.geo', 'datachef.thirdparty', 'datachef.squaredata'],
       scripts=['script/exhibit_agg',],
       #package_data={'akara': ["akara.conf"]},
       )
