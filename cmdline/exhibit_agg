@@ -17,8 +17,10 @@ from amara.thirdparty import httplib2, json
 #from amara.lib.iri import relativize, absolutize
 
 #from amara.lib.util import coroutine
+from datachef import exhibit
 
-def run(inputs=None, filt=None, match=None, out=None):
+
+def run(inputs=None, filt=None, match=None, out=None, fixup=False):
     '''
     See the command line help
     '''
@@ -46,9 +48,13 @@ def run(inputs=None, filt=None, match=None, out=None):
         else:
             indata = json.load(inp)
         out_items = outdata['items']
+        if fixup:
+            legend = {}
         for item in indata['items']:
             if criteria(item):
                 out_items.append(item)
+            if fixup:
+                exhibit.fixup(item, legend)
     json.dump(outdata, out, indent=4)
 
     return
@@ -74,16 +80,18 @@ if __name__ == '__main__':
     #parser.add_argument('-o', '--output')
     parser.add_argument('inputs', type=argparse.FileType('r'), metavar='inputs', nargs='+',
                         help='One or more input exhibit to combine/trim. If there are more than one, the first one will become the template (including data types) and items from the rest will be merged in')
-    parser.add_argument('--out', type=argparse.FileType('w'), default=sys.stdout,
+    parser.add_argument('-o', '--out', type=argparse.FileType('w'), default=sys.stdout,
         help='file where output should be written '
              '(default: write to stdout)')
     parser.add_argument('-c', '--cmatch', type=argparse.FileType('r'),
         help='cross-match: a separate exhibit used to match IDs for the input. Only IDs in the input that appear in the match exhibit will be filtered through')
     parser.add_argument('-f', '--filter', metavar="PYTHON_EXPR", dest="filt",
         help='filter: a python expression evaluated for each input item. If it evaluates to True the item is copied to the output')
+    parser.add_argument('--fixup', action='store_true',
+        help='whether to fix up common problems in the exhibit file format')
     #
     args = parser.parse_args()
 
-    run(inputs=args.inputs, filt=args.filt, match=args.cmatch, out=args.out)
+    run(inputs=args.inputs, filt=args.filt, match=args.cmatch, out=args.out, fixup=args.fixup)
     args.out.close()
 

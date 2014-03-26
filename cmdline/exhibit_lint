@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+"""
+exhibit_lint
+
+Stats and debugging tool for exhibits.
+
+"""
+
+import re
+import sys
+import os
+import glob
+import time
+from itertools import islice
+
+from amara.thirdparty import httplib2, json
+#from amara.lib.iri import relativize, absolutize
+
+#from amara.lib.util import coroutine
+from datachef import exhibit
+
+
+def run(inputs=None, filt=None, match=None, out=None, fixup=False):
+    '''
+    See the command line help
+    '''
+    template = json.load(inputs[0])
+    outdata = template.copy()
+    outdata['items'] = []
+    criteria = lambda x: True
+    #FIXME: if match & filter are both used, only match will take effect
+    if filt:
+        def criteria(item):
+            context = {'item': item}
+            return not not eval(filt, context, context)
+
+    if match:
+        matchdata = json.load(match)
+        match_ids = set(( i.get('id', i.get('label')) for i in matchdata['items'] ))
+        #The above logic will use an ID of None for any item with neither id nor label
+        match_ids.discard(None)
+        criteria = lambda item: item.get('id', item.get('label')) in match_ids
+
+    for inp in inputs:
+        if template:
+            indata = template
+            template = None
+        else:
+            indata = json.load(inp)
+        out_items = outdata['items']
+        if fixup:
+            legend = {}
+        for item in indata['items']:
+            if criteria(item):
+                out_items.append(item)
+            if fixup:
+                exhibit.fixup(item, legend)
+    json.dump(outdata, out, indent=4)
+
+    return
+    try:
+        pass #print >> sys.stderr, '...'
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as e:
+        print >> sys.stderr, 'An exception here might mean you do not have Akara running at %s:'%moinid, e
+    return
+
+
+# Handle the command-line arguments
+
+from akara.thirdparty import argparse #Sorry PEP 8 ;)
+
+#import signal
+#import shutil
+
+if __name__ == '__main__':
+    #parser = argparse.ArgumentParser(prog="bootstrap", add_help=False)
+    parser = argparse.ArgumentParser()
+    #parser.add_argument('-o', '--output')
+    parser.add_argument('inputs', type=argparse.FileType('r'), metavar='inputs', nargs='+',
+                        help='One or more input exhibit to process')
+    parser.add_argument('-o', '--out', type=argparse.FileType('w'), default=sys.stdout,
+        help='file where output should be written '
+             '(default: write to stdout)')
+    #
+    args = parser.parse_args()
+
+    run(inputs=args.inputs, out=args.out)
+    args.out.close()
+
