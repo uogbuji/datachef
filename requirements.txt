@@ -1,2 +1,4 @@
+amara==2
 python-google-spreadsheet
 xlrd
+mmh3
