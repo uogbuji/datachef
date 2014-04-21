@@ -1,9 +1,18 @@
 #datachef.ids
 
+'''
+>>> from datachef.ids import simple_hashstring
+>>> simple_hashstring(u"The quick brown fox jumps over the lazy dog")
+'I_dPLg'
+'''
+import re
 import hashlib
 import base64
 import zlib
 import struct
+
+import mmh3
+
 
 #Uche-Ogbujis-MacBook-Pro-2010:~ uche$ python -c "import hashlib, base64, zlib, struct; print struct.pack('I', zlib.adler32(u'body of sternum (gladiolus)'))"
 #Traceback (most recent call last):
@@ -12,27 +21,32 @@ import struct
 #Uche-Ogbujis-MacBook-Pro-2010:~ uche$ python -c "import hashlib, base64, zlib, struct; print struct.pack('I', zlib.adler32(u'body of sternum gladiolus'))"
 #?   {
 
-def bad_create_slug(title, plain_len=None):
-    '''
-    Tries to create a slug from a title, without caring about readibility
-
-    plain_len - the maximum charcter length preserved (from the beginning) of the title
-
-    >>> create_slug(u"The quick brown fox jumps over the lazy dog")
-    2g_cWw
-    '''
-    #Useful discussion of techniques here: http://stackoverflow.com/questions/1303021/shortest-hash-in-python-to-name-cache-files
-
-    #raw_hash = hashlib.md5(title).digest() #Abandoned idea of using MD5 and truncating
-    raw_hash = struct.pack('I', zlib.adler32(title))
-    slug = base64.urlsafe_b64encode(raw_hash).rstrip("=")
-    return slug
-
-import re
 SLUGCHARS = r'a-zA-Z0-9\-\_'
 OMIT_FROM_SLUG_PAT = re.compile('[^%s]'%SLUGCHARS)
 NORMALIZE_UNDERSCORES_PAT = re.compile('__+')
 #slug_from_title = slug_from_title = lambda t: OMIT_FROM_SLUG_PAT.sub('_', t).lower().decode('utf-8')
+
+MAX32LESS1 = 4294967295 #2**32-1
+
+#For discussion of general purpose hashing as used in this code
+#https://github.com/uogbuji/datachef/wiki/gp-hashing
+
+def simple_hashstring(obj):
+    '''
+    Creates a simple hash (32-bit-based) in brief string form
+    >>> simple_hashstring(u"The quick brown fox jumps over the lazy dog")
+    2g_cWw
+    '''
+    #Useful discussion of techniques here: http://stackoverflow.com/questions/1303021/shortest-hash-in-python-to-name-cache-files
+
+    #Abandoned idea of using MD5 and truncating
+    #raw_hash = hashlib.md5(title).digest()
+    #Abandoned Adler32 for MurmurHash3
+    #raw_hash = struct.pack('i', zlib.adler32(title[:plain_len]))
+    #Use MurmurHash3
+    raw_hash = struct.pack('i', mmh3.hash(str(obj)))
+    hashstr = base64.urlsafe_b64encode(raw_hash).rstrip("=")
+    return hashstr
 
 
 def create_slug(title, plain_len=None):
@@ -40,7 +54,7 @@ def create_slug(title, plain_len=None):
     Tries to create a slug from a title, trading off collision risk with readability and minimized cruft
 
     title - a unicode object with a title to use as basis of the slug
-    plain_len - the maximum charcter length preserved (from the beginning) of the title
+    plain_len - the maximum character length preserved (from the beginning) of the title
 
     >>> from datachef.ids import create_slug
     >>> create_slug(u"The  quick brown fox jumps over the lazy dog")
@@ -48,7 +62,8 @@ def create_slug(title, plain_len=None):
     >>> create_slug(u"The  quick brown fox jumps over the lazy dog", 20)
     u'the_quick_brown_fox'
     '''
-    pass1 = OMIT_FROM_SLUG_PAT.sub('_', title).lower()[:plain_len]
+    if plain_len: title = title[:plain_len]
+    pass1 = OMIT_FROM_SLUG_PAT.sub('_', title).lower()
     return NORMALIZE_UNDERSCORES_PAT.sub('_', pass1)
 
 
