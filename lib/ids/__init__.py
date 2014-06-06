@@ -2,24 +2,14 @@
 
 '''
 >>> from datachef.ids import simple_hashstring
->>> simple_hashstring(u"The quick brown fox jumps over the lazy dog")
-'I_dPLg'
+>>> simple_hashstring("The quick brown fox jumps over the lazy dog")
+B7x7vEvj
 '''
 import re
-import hashlib
 import base64
-import zlib
 import struct
 
 import mmh3
-
-
-#Uche-Ogbujis-MacBook-Pro-2010:~ uche$ python -c "import hashlib, base64, zlib, struct; print struct.pack('I', zlib.adler32(u'body of sternum (gladiolus)'))"
-#Traceback (most recent call last):
-#  File "<string>", line 1, in <module>
-#struct.error: integer out of range for 'I' format code
-#Uche-Ogbujis-MacBook-Pro-2010:~ uche$ python -c "import hashlib, base64, zlib, struct; print struct.pack('I', zlib.adler32(u'body of sternum gladiolus'))"
-#?   {
 
 SLUGCHARS = r'a-zA-Z0-9\-\_'
 OMIT_FROM_SLUG_PAT = re.compile('[^%s]'%SLUGCHARS)
@@ -31,11 +21,14 @@ MAX32LESS1 = 4294967295 #2**32-1
 #For discussion of general purpose hashing as used in this code
 #https://github.com/uogbuji/datachef/wiki/gp-hashing
 
-def simple_hashstring(obj):
+def simple_hashstring(obj, bits=48):
     '''
-    Creates a simple hash (32-bit-based) in brief string form
-    >>> simple_hashstring(u"The quick brown fox jumps over the lazy dog")
-    2g_cWw
+    Creates a simple hash in brief string form from obj
+    bits is an optional bit width, defaulting to 48, and should be in multiples of 8
+
+    >>> from datachef.ids import simple_hashstring
+    >>> simple_hashstring("The quick brown fox jumps over the lazy dog")
+    B7x7vEvj
     '''
     #Useful discussion of techniques here: http://stackoverflow.com/questions/1303021/shortest-hash-in-python-to-name-cache-files
 
@@ -44,9 +37,11 @@ def simple_hashstring(obj):
     #Abandoned Adler32 for MurmurHash3
     #raw_hash = struct.pack('i', zlib.adler32(title[:plain_len]))
     #Use MurmurHash3
-    raw_hash = struct.pack('i', mmh3.hash(str(obj)))
-    hashstr = base64.urlsafe_b64encode(raw_hash).rstrip("=")
-    return hashstr
+    #Get a 64-bit integer, the first half of the 128-bit tuple from mmh and then bit shift it to get the desired bit length
+    basis = mmh3.hash64(str(obj))[0] >> (64-bits)
+    raw_hash = struct.pack('l', basis)[:-int((64-bits)/8)]
+    hashstr = base64.urlsafe_b64encode(raw_hash).rstrip(b"=")
+    return hashstr.decode('ascii')
 
 
 def create_slug(title, plain_len=None):

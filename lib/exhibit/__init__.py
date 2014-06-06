@@ -4,8 +4,8 @@
 
 import re
 
-EJSON_ID_CHARS = ur'a-zA-Z0-9\-\_'
-EJSON_ID_PAT = re.compile(u'[^%s]'%EJSON_ID_CHARS)
+EJSON_ID_CHARS = r'a-zA-Z0-9\-\_'
+EJSON_ID_PAT = re.compile('[^%s]'%EJSON_ID_CHARS)
 fixup_id = lambda t: EJSON_ID_PAT.sub('_', t.strip())#.lower()
 
 

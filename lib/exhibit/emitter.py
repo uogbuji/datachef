@@ -5,7 +5,7 @@ ITEMS_DONE_SIGNAL = object()
 NO_METADATA = None
 
 @coroutine
-def emitter(stream, indent=4):
+def emitter(stream, indent=4, encoding='utf-8'):
     '''
     A framework for streamed output of exhibit records
     stream - the output stream for the data
@@ -23,7 +23,7 @@ def emitter(stream, indent=4):
                 first_item = False
             else:
                 print >> stream, ',',
-            json.dump(item, stream, indent=indent)
+            json.dump(item, stream, indent=indent, encoding=encoding)
 
     print >> stream, ']',
     metadata = yield
@@ -32,7 +32,7 @@ def emitter(stream, indent=4):
             print >> stream, ',\n    ',
             json.dump(k, stream, indent=indent)
             print >> stream, ': ',
-            json.dump(v, stream, indent=indent)
+            json.dump(v, stream, indent=indent, encoding=encoding)
 
     print >> stream, '}'
     dummy = yield #Really just wait to be closed; needed to avoid annoying StopIteration
@@ -92,28 +92,28 @@ def prep(items, schema=None, strict=False):
     from amara.lib.util import mcompose, first_item
     from zen import exhibit
 
-    PIPELINES = { u'atom:entry': {
-        u"type": None,
-        u"author": None,
-        u"updated": None,
-        #u"title": mcompose(first_item, string.strip),
-        u"title": None,
-        u"alternate_link": first_item,
-        u"summary": (first_item, exhibit.REQUIRE),
-        u"content": None,
-        u"published": None,
-        u"id": None, #Note: ID is always automatically required
-        u"label": None,
-    }, u'atom:feed': None }
+    PIPELINES = { 'atom:entry': {
+        "type": None,
+        "author": None,
+        "updated": None,
+        #"title": mcompose(first_item, string.strip),
+        "title": None,
+        "alternate_link": first_item,
+        "summary": (first_item, exhibit.REQUIRE),
+        "content": None,
+        "published": None,
+        "id": None, #Note: ID is always automatically required
+        "label": None,
+    }, 'atom:feed': None }
     prepped = exhibit.prep(obj, schema=PIPELINES)
     '''
     remove_list = []
     for item in items:
         #print item
-        if not u'id' in item:
+        if not 'id' in item:
             raise ValueError('Missing ID')
         if schema:
-            match = schema.get(first_item(item.get(u'type')))
+            match = schema.get(first_item(item.get('type')))
             if strict and match is None:
                 remove_list.append(item)
                 continue
@@ -142,7 +142,7 @@ def prep(items, schema=None, strict=False):
         items.remove(item)
     return items
 
-LATLONG_PAT = re.compile(ur'[-+]?[0-9]+,[-+]?[0-9]+')
+LATLONG_PAT = re.compile(r'[-+]?[0-9]+,[-+]?[0-9]+')
 
 def profile_properties(items):
     '''

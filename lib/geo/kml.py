@@ -42,7 +42,7 @@ import re
 #Now we have 2 problems ;)
 #Dirty, dirty hack. Move to proper XML soonest
 
-PM_PID_PAT = re.compile(ur'<Placemark.*?(<description>.*?<td>(PIN|PARCELID)</td>\s*<td>(.*?)</td>.*?</description>.*?)?<Polygon>.*?<coordinates>(.*?)</coordinates>.*?</Polygon>.*?</Placemark>', flags=re.DOTALL)
+PM_PID_PAT = re.compile(r'<Placemark.*?(<description>.*?<td>(PIN|PARCELID)</td>\s*<td>(.*?)</td>.*?</description>.*?)?<Polygon>.*?<coordinates>(.*?)</coordinates>.*?</Polygon>.*?</Placemark>', flags=re.DOTALL)
 
 def gen_record(text):
     for m in PM_PID_PAT.finditer(text):
