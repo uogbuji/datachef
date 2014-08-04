@@ -1,6 +1,5 @@
-#datachef.squaredata
+#datachef.square
 
-#FIXME: This will be moved to data chef, refer from there
 def dict_from_xls(f, sheet_index=0, start_row=1):
     import mmap
     import xlrd
@@ -12,6 +11,6 @@ def dict_from_xls(f, sheet_index=0, start_row=1):
         return (sheet.cell_value(0, j), sheet.cell_value(i, j))
 
     return ( dict(item(i, j) for j in range(sheet.ncols)) \
-                 for i in xrange(start_row, sheet.nrows) )
+                 for i in range(start_row, sheet.nrows) )
 
 

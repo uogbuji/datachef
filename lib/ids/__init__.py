@@ -62,22 +62,18 @@ def create_slug(title, plain_len=None):
     return NORMALIZE_UNDERSCORES_PAT.sub('_', pass1)
 
 
-#http://stackoverflow.com/questions/5574042/string-slugification-in-python
-## {{{ http://code.activestate.com/recipes/577257/ (r2)
-_slugify_strip_re = re.compile(r'[^\w\s-]')
-_slugify_hyphenate_re = re.compile(r'[-\s]+')
-def _slugify(value):
+# Based loosely on http://stackoverflow.com/questions/5574042/string-slugification-in-python
+# & http://code.activestate.com/recipes/577257/
+_CHANGEME_RE = re.compile(r'[^\w\-_]')
+#_SLUGIFY_HYPHENATE_RE = re.compile(r'[-\s]+')
+def slugify(value, hyphenate=True, lower=True):
     """
     Normalizes string, converts to lowercase, removes non-alpha characters,
     and converts spaces to hyphens.
-    
-    From Django's "django/template/defaultfilters.py".
     """
     import unicodedata
-    if not isinstance(value, unicode):
-        value = unicode(value)
-    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = unicode(_slugify_strip_re.sub('', value).strip().lower())
-    return _slugify_hyphenate_re.sub('-', value)
-## end of http://code.activestate.com/recipes/577257/ }}}
+    value = unicodedata.normalize('NFKD', value).strip()
+    replacement = '-' if hyphenate else ''
+    if lower: value = value.lower()
+    return _CHANGEME_RE.sub(replacement, value)
 
