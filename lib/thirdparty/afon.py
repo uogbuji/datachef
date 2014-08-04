@@ -66,14 +66,14 @@ LITERALB = r'"""[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""'
 DECL = r'@[A-Za-z]+'
 
 if USE_PATHS: 
-   PATHTERM = r'(?:%s|%s|%s|%s|%s|a)' % \
+    PATHTERM = r'(?:%s|%s|%s|%s|%s|a)' % \
         (LITERALA, URIREF, QNAME, EXIVAR, UNIVAR)
-   PATH = r'%s(?:(?:\.|\^)%s)+' % (PATHTERM, PATHTERM)
-   LITERALB += '|' + PATH # if only to get a "hork" out of bijan...
+    PATH = r'%s(?:(?:\.|\^)%s)+' % (PATHTERM, PATHTERM)
+    LITERALB += '|' + PATH # if only to get a "hork" out of bijan...
 
 Tokens = group(LITERALB, URIREF, LITERALA, DECL, ':-', QNAME, EXIVAR, 
-   PREFIX, NAME, UNIVAR, 'is', 'of', '=>', '=', '{', '}', '\(', '\)', 
-   '\[', '\]', ',', ';', '\.')
+    PREFIX, NAME, UNIVAR, 'is', 'of', '=>', '=', '{', '}', '\(', '\)',
+    '\[', '\]', ',', ';', '\.')
 Token = re.compile(Tokens, re.S)
 
 # # # # # # # # # # # # # # # # #
@@ -99,7 +99,7 @@ def tokenize(s, pre=1):
 
 class N3SyntaxError(SyntaxError):
     def __init__(self, msg, uri, tpos, n3): 
-	self.msg = msg
+        self.msg = msg
         self.uri = uri
         self.tpos = tpos
         self.n3 = n3
@@ -477,7 +477,8 @@ class N3Parser:
         if s.startswith('"""'): s = s[3:-3]
         else: s = s[1:-1]
 
-        s = re.sub(ur'\\u(....)', lambda m: unichr(int(m.group(1), 16)), s)
+        #FIXME: commented out by uche because of Python 3 syntax error
+        #s = re.sub(ur'\\u(....)', lambda m: chr(int(m.group(1), 16)), s)
         for k in unescapes.keys(): s = s.replace(k, unescapes[k])
         s = s.replace('\\\\', '\\')
         return (LIT, s)
@@ -570,13 +571,13 @@ class N3Sink:
     def bind(self, pfx, val): pass
     def makeComment(self, s): pass
     def quant(self, formula, var): pass
-    def makeStatement(self, (subj, pred, obj, scp)): pass
+    def makeStatement(self, _triple): pass
 
 class TestN3Sink(N3Sink): 
     """An outline of the methods called by the N3Parser class."""
     def setDefaultNamespace(self, nsPair): pass
-    def makeStatement(self, (subj, pred, obj, scp)): 
-        print subj, pred, obj, scp
+    def makeStatement(self, _triple):
+        print(subj, pred, obj, scp)
 
 class SWAPSink(N3Sink): 
     """Convert output from an afon sink into a SWAP sink."""
@@ -615,7 +616,8 @@ class SWAPSink(N3Sink):
     def endDoc(self): 
         self._sink.endDoc(self.n(self._rootFormula))
 
-    def makeStatement(self, (subj, pred, obj, scp)): 
+    def makeStatement(self, _triple):
+        (subj, pred, obj, scp) = _triple
         subj, pred, obj, scp = self.n(subj), self.n(pred), \
                                self.n(obj), self.n(scp)
         self._sink.makeStatement((scp, pred, subj, obj))
@@ -634,7 +636,7 @@ class SWAPSink(N3Sink):
 
 if __name__=="__main__": 
     import sys
-    if len(sys.argv) == 1: print __doc__
+    if len(sys.argv) == 1: print(__doc__)
     elif sys.argv[1].endswith('-test'): 
         import urllib
         t = '@prefix : <#> .\n:x _:y "blargh phenomic etc.\u203D" .'

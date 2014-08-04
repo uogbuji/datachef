@@ -1,4 +1,4 @@
-#datachef.squaredata
+#datachef.square
 
 def dict_from_xls(f, sheet_index=0, start_row=1):
     '''
