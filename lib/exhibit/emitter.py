@@ -1,5 +1,7 @@
-from amara.lib.util import coroutine
-from amara.thirdparty import json
+#from amara.lib.util import coroutine
+#from amara.thirdparty import json
+from amara3.util import coroutine
+import json
 
 ITEMS_DONE_SIGNAL = object()
 NO_METADATA = None
@@ -11,7 +13,7 @@ def emitter(stream, indent=4, encoding='utf-8'):
     stream - the output stream for the data
     '''
     #FIXME: use the with statement to handle situations where the caller doesn't wrap up
-    print >> stream, '{"items": ['
+    print('{"items": [', file=stream)
     first_item = True
     done = False
     while not done:
@@ -22,20 +24,20 @@ def emitter(stream, indent=4, encoding='utf-8'):
             if first_item:
                 first_item = False
             else:
-                print >> stream, ',',
-            json.dump(item, stream, indent=indent, encoding=encoding)
+                print(', ', file=stream, end='')
+            json.dump(item, stream, indent=indent)
 
-    print >> stream, ']',
+    print(']', file=stream, end='')
     metadata = yield
     if metadata != NO_METADATA:
         for k, v in metadata.items():
-            print >> stream, ',\n    ',
+            print(',\n    ', file=stream, end='')
             json.dump(k, stream, indent=indent)
-            print >> stream, ': ',
-            json.dump(v, stream, indent=indent, encoding=encoding)
+            print(': ', file=stream, end='')
+            json.dump(v, stream, indent=indent)
 
-    print >> stream, '}'
-    dummy = yield #Really just wait to be closed; needed to avoid annoying StopIteration
+    print('}', file=stream)
+    yield #Wait to be closed
     return
 
 
@@ -56,9 +58,8 @@ Uche's quick guidelines:
 
 import re
 
-import amara
-from amara.lib.util import pipeline_stage
-from amara.lib.util import mcompose, first_item
+#from amara.lib.util import pipeline_stage
+#from amara.lib.util import mcompose, first_item
 
 UNSUPPORTED_IN_EXHIBITKEY = re.compile('\W')
 
