@@ -5,11 +5,15 @@
 >>> simple_hashstring("The quick brown fox jumps over the lazy dog")
 B7x7vEvj
 '''
+
 import re
 import base64
 import struct
 
 import mmh3
+
+from amara3 import iri
+from amara3.util import coroutine
 
 SLUGCHARS = r'a-zA-Z0-9\-\_'
 OMIT_FROM_SLUG_PAT = re.compile('[^%s]'%SLUGCHARS)
@@ -76,4 +80,39 @@ def slugify(value, hyphenate=True, lower=True):
     replacement = '-' if hyphenate else ''
     if lower: value = value.lower()
     return _CHANGEME_RE.sub(replacement, value)
+
+
+#from datachef.ids import simple_hashstring
+@coroutine
+def idgen(idbase, tint=None):
+    '''
+    Generate an IRI as a hash of given information, or just make one up if None given
+    idbase -- Base URI for generating links
+    tint -- String that affects the sequence of IDs generated if sent None
+
+    >>> from datachef.ids import idgen
+    >>> g = idgen(None)
+    >>> next(g) #Or g.send(None)
+    'RtW-3skq'
+    >>> next(g)
+    'e4r-u_tx'
+    >>> g.send('spam')
+    'ThKLPHvp'
+    >>> next(g)
+    'YbGlkNf9'
+    >>> g.send('spam')
+    'ThKLPHvp'
+    >>> g.send('eggs')
+    'HeBrpNON'
+    '''
+    #Simple tumbler for now, possibly switch to random number, with some sort of sequence override for unit testing
+    counter = -1
+    to_hash = None
+    while True:
+        if to_hash is None:
+            to_hash = str(counter)
+            if tint: to_hash += tint
+        to_hash = iri.absolutize(to_hash, idbase) if idbase else to_hash
+        to_hash = yield simple_hashstring(to_hash)
+        counter += 1
 
