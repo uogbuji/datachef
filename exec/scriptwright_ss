@@ -1,0 +1,127 @@
+#!/usr/bin/env python
+"""
+exhibit_lint
+
+Stats and debugging tool for exhibits.
+
+"""
+
+import re
+import sys
+import os
+import glob
+import time
+import mmap
+from itertools import islice
+import argparse
+
+import tablib
+from datachef.square import dict_from_xls, dict_from_xls_sheet
+from datachef.ids import slugify
+
+
+TOP = '''\
+import re
+import sys
+import os
+import glob
+import time
+import mmap
+from itertools import islice
+
+import tablib
+from datachef.square import dict_from_xls
+from datachef.ids import slugify
+
+def map_headers(row, before, after):
+    return {((a, row[b]) for (a, b) in zip(before, after))}
+
+def process(infile):
+    sheets = dict_from_xls(infile)
+'''
+
+SHEET_STANZA = '''\
+    #Load sheet '{0}'
+    indata = sheets['{0}']
+
+    headers = {1}
+    new_headers = []
+    for h in headers:
+        new_headers.append(slugify(h, disambig=new_headers))
+
+    new_row = map_headers(row, before, after)
+    for k, in new_row:
+        pass
+'''
+
+ROWS_STANZA = '''\
+        assert row['level_4_code'] == row['src_prod_hier_code'], (row['level_4_code'],row['src_prod_hier_code'])
+        rid = row['level_4_code']
+        ancestors = row['src_prod_hier_desc'].split('~')[:-1]
+        parent = create_slug(ancestors[-1])
+        item = {
+            'id': create_slug(rid),
+            'label': rid,
+            'type': 'Product',
+            'hierarchy': ancestors,
+            'parent': parent,
+        }
+        rev_anc = ancestors.copy()
+        rev_anc.reverse()
+        for i, anc in enumerate(rev_anc):
+            try:
+                super_anc = rev_anc[i + 1]
+            except IndexError:
+                super_anc = None
+            ancid = create_slug(anc)
+            if ancid not in hier_nodes:
+                anc_item = {
+                    'id': ancid,
+                    'label': anc,
+                    'type': 'HierarchicalNode',
+                }
+                if super_anc: anc_item['parent'] = create_slug(super_anc)
+                em.send(anc_item)
+                hier_nodes[ancid] = anc_item
+                
+        for k, v in row.items():
+            if k not in ['level_4_code', 'src_prod_hier_code', 'level_4_desc', 'src_prod_hier_desc']:
+                item[k] = v
+            #m.add(I(rid), I(k), v)
+        #logger.debug('Looking up branch: '.format(row['Branch']))
+        #print('Looking up branch: {0}'.format(row['Branch']))
+'''
+
+
+def run(infile=None, out=None):
+    '''
+    See the command line help
+    '''
+    out.write(TOP)
+    sheets = dict_from_xls(infile[0])
+    
+    for sname in sheets:
+        sheet = sheets[sname]
+        headers = list(next(sheet).keys())
+        out.write(SHEET_STANZA.format(sname, repr(headers)))
+
+    return
+
+
+# Handle the command-line arguments
+if __name__ == '__main__':
+    #parser = argparse.ArgumentParser(prog="bootstrap", add_help=False)
+    parser = argparse.ArgumentParser()
+    #parser.add_argument('-o', '--output')
+    parser.add_argument('input', type=argparse.FileType('r'), metavar='FILE', nargs=1,
+                        help='The input file to process')
+    parser.add_argument('-o', '--out', type=argparse.FileType('w'), default=sys.stdout,
+        help='File where output should be written '
+             '(default: write to stdout)')
+    #
+    args = parser.parse_args()
+
+    run(infile=args.input, out=args.out)
+    args.out.close()
+    args.out.close()
+

@@ -70,16 +70,20 @@ def create_slug(title, plain_len=None):
 # & http://code.activestate.com/recipes/577257/
 _CHANGEME_RE = re.compile(r'[^\w\-_]')
 #_SLUGIFY_HYPHENATE_RE = re.compile(r'[-\s]+')
-def slugify(value, hyphenate=True, lower=True):
+def slugify(value, hyphenate=True, lower=True, disambig=None):
     """
     Normalizes string, converts to lowercase, removes non-alpha characters,
     and converts spaces to hyphens.
     """
+    disambig = disambig or []
     import unicodedata
     value = unicodedata.normalize('NFKD', value).strip()
     replacement = '-' if hyphenate else ''
     if lower: value = value.lower()
-    return _CHANGEME_RE.sub(replacement, value)
+    slug = _CHANGEME_RE.sub(replacement, value)
+    while slug in disambig:
+        slug += '_'
+    return slug
 
 
 FROM_EMPTY_HASH = 'AAAAAAAA'
