@@ -15,6 +15,5 @@ setup(name = "datachef",
       url='http://uche.ogbuji.net',
       package_dir={'datachef': 'lib'},
       packages=['datachef', 'datachef.exhibit', 'datachef.geo', 'datachef.ids', 'datachef.thirdparty', 'datachef.square'],
-      scripts=['exec/exhibit_agg', 'exec/exhibit_lint', 'exec/scriptwright_ss'],
+      scripts=['exec/exhibit_agg', 'exec/exhibit_lint', 'exec/scriptwright_ss', 'exec/multiline_replace'],
       )
-

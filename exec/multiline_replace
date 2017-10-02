@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+"""
+multiline_replace
+
+Search & replace across multiple lines
+
+"""
+
+
+import re
+import sys
+import os
+import glob
+#import time
+#from itertools import islice
+import fileinput
+import argparse
+import subprocess
+
+
+def run(filespec, searchfp, replacefp, gzfiles=True):
+    searchlines = searchfp.readlines()
+    searchlines = [ l.strip() for l in searchlines ]
+    searchlen = len(searchlines)
+    replacetext = replacefp.read()
+    if os.path.isfile(filespec):
+        fname = filespec
+        print('Processing ', fname, end='', file=sys.stderr)
+        match_index = -1
+        spool = ''
+        changecount = 0
+        if gzfiles:
+            #result = subprocess.run(['gunzip', fname])
+            #if result.returncode:
+            result = subprocess.call(['gunzip', fname])
+            if result:
+                print(' gunzip failed ', fname, file=sys.stderr)
+                return
+            fname = fname.rsplit('.gz')[0]
+        with fileinput.input(files=(fname,), inplace=True) as sourcefp:
+            for line in sourcefp:
+                line = line.rstrip('\n\r')
+                if line.strip() == searchlines[match_index+1].strip():
+                    #if match_index != -1: print(match_index)
+                    match_index += 1
+                    spool += line
+                    if match_index + 1 == searchlen:
+                        #print(replacetext, file=sys.stderr)
+                        print(replacetext)
+                        changecount += 1
+                        match_index = -1
+                        spool = ''
+                elif line.strip() == searchlines[0].strip():
+                    match_index += 1
+                    spool += line
+                else:
+                    if spool:
+                        print(spool, end='')
+                        spool = ''
+                    match_index = -1
+                    print(line)
+
+        if gzfiles:
+            #result = subprocess.run(['gzip', fname])
+            #if result.returncode:
+            result = subprocess.call(['gzip', fname])
+            if result:
+                print(' gzip failed ', fname, file=sys.stderr)
+                return
+
+        print(' ({} replacements made)'.format(changecount), file=sys.stderr)
+    return
+
+
+if __name__ == '__main__':
+    #
+    parser = argparse.ArgumentParser()
+    parser.add_argument('targetfiles', nargs=1, metavar="FILESPEC",
+        help='Files to modify.')
+    parser.add_argument('searchstringfile', nargs=1, metavar="PATH", type=argparse.FileType('r'),
+        help='File containing the text to be found.')
+    parser.add_argument('replacestringfile', nargs=1, metavar="PATH", type=argparse.FileType('r'),
+        help='File containing the text to be substituted into the search text.')
+    parser.add_argument('--gzfiles', action='store_true',
+        help='If true the input param must be a gzipped file ending in .gz, in which case it will be unzipped, processed  & zipped back')
+    parser.add_argument('-v', '--verbose', action='store_true',
+        help='Show additional messages and information')
+    args = parser.parse_args()
+
+    args.targetfiles = args.targetfiles[0]
+    args.searchstringfile = args.searchstringfile[0]
+    args.replacestringfile = args.replacestringfile[0]
+    run(args.targetfiles,
+        args.searchstringfile,
+        args.replacestringfile,
+        args.gzfiles,
+        )
+
+    args.searchstringfile.close()
+    args.replacestringfile.close()
